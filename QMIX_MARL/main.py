@@ -114,3 +114,4 @@ def get_next_folder(base_path, folder_prefix):
 if __name__ == "__main__":
     multiprocessing.set_start_method('spawn')
     marl_agent_wrapper()
+# source ./venv/bin/activate

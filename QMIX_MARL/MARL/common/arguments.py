@@ -28,8 +28,8 @@ def get_common_args():
     # 以下几个参数比较常用,注意只有指定变量名的时候，就会变成true，没法b变false，最好直接在这里改参数吧
     # parser.add_argument('--model_dir', type=str, default='./result/', help='model directory of the policy')
     #/home/dell/桌面/signal_RL/signal_fire5.7/MARL
-    parser.add_argument('--result_dir', type=str, default='/home/dell/桌面/test5/QMIX_MARL/result', help='model directory of the policy')
-    parser.add_argument('--load_model_dir', type=str, default='/home/dell/桌面/test5/QMIX_MARL/MARL/model', help='result directory of the policy')
+    parser.add_argument('--result_dir', type=str, default='./result', help='model directory of the policy')
+    parser.add_argument('--load_model_dir', type=str, default='./MARL/model', help='result directory of the policy')
 
     parser.add_argument('--load_model', type=bool, default=True, help='whether to load the pretrained model')
     parser.add_argument('--learn', type=bool, default=True, help='whether to train the model')
@@ -215,4 +215,3 @@ def get_g2anet_args(args):
     args.attention_dim = 32
     args.hard = True
     return args
-
