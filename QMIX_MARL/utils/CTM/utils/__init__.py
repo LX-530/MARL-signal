@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import random
 import warnings
+from pathlib import Path
 
 # import threading
 import numpy as np
@@ -253,12 +254,16 @@ def cell_type_create():
         cell_type_list.append(people)
     return cell_type_list
 
-def load_all_firebytime():
-    file_path = './fire_info/subway_devc_fire_in_cell_251 6.csv'
-    # 检查文件是否存在
-    if os.path.isfile(file_path):
+def load_all_firebytime(fire_csv_path=None):
+    base_dir = Path(__file__).resolve().parents[3]
+    if fire_csv_path is None:
+        file_path = base_dir / 'fire_info' / 'subway_devc_fire_in_cell_251 6.csv'
+    else:
+        file_path = Path(fire_csv_path)
+    # ????????
+    if file_path.is_file():
         all_fireinfo = []
-        with open(file_path, 'r') as file:
+        with file_path.open('r') as file:
             reader = csv.reader(file)
             for step, row in enumerate(reader):
                 if step < 2:  # 跳过前两行

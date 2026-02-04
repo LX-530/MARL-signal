@@ -7,7 +7,10 @@
 @Time : 2024/4/1 22:21
 """
 import math
-from shapely.geometry import Polygon
+try:
+    from shapely.geometry import Polygon as ShapelyPolygon
+except Exception:
+    ShapelyPolygon = None
 from utils.CTM.utils import ped_fd, fire_effect_speed, ped_str_fd
 
 free_velocity = 1.2  # 自由流速度
@@ -17,6 +20,21 @@ cri_density = 2.5  # 临界密度值 单位：人/米方
 duration = l / free_velocity  # 时间步长，单位：秒
 
 
+def polygon_area(points):
+    if ShapelyPolygon is not None:
+        return float(ShapelyPolygon(points).area)
+    if not points:
+        return 0.0
+    area = 0.0
+    n = len(points)
+    for i in range(n):
+        x1, y1 = points[i]
+        x2, y2 = points[(i + 1) % n]
+        area += x1 * y2 - x2 * y1
+    return abs(area) / 2.0
+
+
+
 class Node:
     def __init__(self, _id, _polygon, _num, _ex, _real_id,_fire_info,_node_type):
         # 所有固定信息
@@ -24,7 +42,7 @@ class Node:
         self.polygon = _polygon  # 节点所对应的元胞的几何信息，调用类 from shapely.geometry import Polygon
         self.exit = _ex  # 是否为出口处的虚拟节点，该节点无流出，面积为无限大
         if not self.exit:
-            self.area = float(Polygon(_polygon).area)*1000000 # / 100  # 面积
+            self.area = polygon_area(_polygon) * 1000000 # / 100  # 面积
         else:
             self.area = float("inf")
         self.initial_number = _num  # 疏散开始时元胞内行人数

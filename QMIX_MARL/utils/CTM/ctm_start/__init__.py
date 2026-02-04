@@ -8,6 +8,7 @@
 """
 import csv
 import random
+from pathlib import Path
 
 from sympy.stats import density
 
@@ -29,6 +30,10 @@ from matplotlib.patches import Polygon, FancyArrowPatch
 import imageio
 import os
 from utils.CTM.utils import calculate_fire_risk, load_all_firebytime
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+DATA_DIR = BASE_DIR / 'data_preprocessing'
+OUTPUT_DIR = BASE_DIR / 'result' / 'ctm_visuals'
 
 
 
@@ -176,7 +181,7 @@ def init(fire_info=None):
 
     # Read CSV file
     original_door_size = []
-    with open('./data_preprocessing/outputL.csv', 'r') as file:
+    with (DATA_DIR / 'outputL.csv').open('r') as file:
         reader = csv.reader(file)
         for row in reader:
             original_door_size.append([int(float(cell)) for cell in row])  # Convert each cell to integer
@@ -291,7 +296,7 @@ def init(fire_info=None):
 
     Position_cells =[]
 
-    with open('./data_preprocessing/outputP.csv', 'r') as file:
+    with (DATA_DIR / 'outputP.csv').open('r') as file:
         reader = csv.reader(file)
         for row in reader:
             list1 = []
@@ -377,7 +382,7 @@ def draw_nested_connections(ax, centers, nested_connections):
 
 def visualize_nested_connections(nested_connections, highlight_nodes=None, exit_nodes=None):
     # ============= 默认文件路径 =============
-    csv_path = "./../../../data_preprocessing/outputP.csv"
+    csv_path = DATA_DIR / 'outputP.csv'
 
     # ============= 数据准备 =============
     def parse_coordinate(cell):
@@ -479,7 +484,7 @@ def visualize_nested_connections(nested_connections, highlight_nodes=None, exit_
     ax.legend(handles=legend_patches, loc='upper left', fontsize='x-small')
 
     # ============= 输出结果 =============
-    plt.savefig("nested_connections.png", dpi=300, bbox_inches="tight")
+    plt.savefig(OUTPUT_DIR / 'nested_connections.png', dpi=300, bbox_inches="tight")
     plt.close()
     return fig
 
@@ -487,7 +492,7 @@ def visualize_nested_connections(nested_connections, highlight_nodes=None, exit_
 
 def visualize_numbers(highlight_nodes=None, exit_nodes=None, people_count=None, step=1, nested_connections=None,name='density'):
     # ============= 默认文件路径 =============
-    csv_path = "./../../../data_preprocessing/outputP.csv"
+    csv_path = DATA_DIR / 'outputP.csv'
 
     # ============= 数据准备 =============
     def parse_coordinate(cell):
@@ -630,10 +635,10 @@ def visualize_numbers(highlight_nodes=None, exit_nodes=None, people_count=None, 
     cbar.ax.tick_params(labelsize=8)
 
     # ============= 输出结果 =============
-    output_filename = f"{name} number{step}.png"
+    output_filename = OUTPUT_DIR / f"{name} number{step}.png"
     plt.savefig(output_filename, dpi=150, bbox_inches="tight")
     plt.close()
-    return output_filename
+    return str(output_filename)
 
 
 def create_gif(image_files, output_gif):
@@ -680,74 +685,79 @@ def _get_state_list1(self):
 
 
 if __name__ == '__main__':
+    # Run from repo root or QMIX_MARL; outputs saved under QMIX_MARL/result/ctm_visuals
+    # Static actions are fixed to 0 for every signal.
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     fire_info = load_all_firebytime()
-    action_space = [
-        [1, 2, 2, 3, 0, 3, 1, 3, 1, 0, 0, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 0, 3, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 2, 2, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
-        [0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2],
-        [0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 2, 2, 3, 2, 3, 0, 3, 2, 2, 3, 2],
-        [1, 1, 2, 3, 1, 3, 1, 3, 1, 2, 1, 2],
-        [1, 1, 2, 3, 1, 3, 1, 3, 1, 2, 1, 2],
-        [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
-        [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
-        [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
-        [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0]
-    ]
+    # action_space = [
+    #     [1, 2, 2, 3, 0, 3, 1, 3, 1, 0, 0, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [1, 1, 0, 3, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 2, 2, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
+    #     [0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2],
+    #     [0, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #     [0, 2, 2, 3, 2, 3, 0, 3, 2, 2, 3, 2],
+    #     [1, 1, 2, 3, 1, 3, 1, 3, 1, 2, 1, 2],
+    #     [1, 1, 2, 3, 1, 3, 1, 3, 1, 2, 1, 2],
+    #     [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
+    #     [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
+    #     [1, 1, 2, 2, 1, 0, 1, 2, 1, 2, 1, 2],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 3, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0],
+    #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0]
+    # ]
     g = init(fire_info)
+    static_actions = [0] * len(g.sigal_effect_cells)
+    action_space = [static_actions]
 
     # 存储图片
     density_image_files = []
@@ -764,7 +774,7 @@ if __name__ == '__main__':
     location = []
     rewards = 0
     for i in range(0, 97):
-        actions = action_space[0]
+        actions = static_actions
         g.from_actions_get_groupId_submatrix(actions)
         g = start_Sub_CTM(g, i)
         print(sum(g.current_num))
@@ -803,7 +813,7 @@ if __name__ == '__main__':
     plt.ylabel('Static Field')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('static_field_plot.png')
+    plt.savefig(OUTPUT_DIR / 'static_field_plot.png')
     plt.close()
 
     # 2. 火灾等级变化图
@@ -814,7 +824,7 @@ if __name__ == '__main__':
     plt.ylabel('Fire Levels')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('fire_levels_plot.png')
+    plt.savefig(OUTPUT_DIR / 'fire_levels_plot.png')
     plt.close()
 
     # 3. 拥堵等级变化图
@@ -825,7 +835,7 @@ if __name__ == '__main__':
     plt.ylabel('Congestion Levels')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('congestion_levels_plot.png')
+    plt.savefig(OUTPUT_DIR / 'congestion_levels_plot.png')
     plt.close()
 
     # 4. 累积火灾等级图
@@ -837,7 +847,7 @@ if __name__ == '__main__':
     plt.ylabel('Cumulative Levels')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('cumulative_fire_levels_plot.png')
+    plt.savefig(OUTPUT_DIR / 'cumulative_fire_levels_plot.png')
     plt.close()
 
     # 5. 累积拥堵等级图
@@ -849,7 +859,7 @@ if __name__ == '__main__':
     plt.ylabel('Cumulative Levels')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('cumulative_congestion_levels_plot.png')
+    plt.savefig(OUTPUT_DIR / 'cumulative_congestion_levels_plot.png')
     plt.close()
 
     # 6. 新增：总人数变化图
@@ -860,7 +870,7 @@ if __name__ == '__main__':
     plt.ylabel('Number of People')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('total_people_plot.png', dpi=300)
+    plt.savefig(OUTPUT_DIR / 'total_people_plot.png', dpi=300)
     plt.close()
 
     print("六张分析图已保存：")
@@ -872,10 +882,10 @@ if __name__ == '__main__':
     print("- total_people_plot.png        # 总人数变化\n")
 
     # 生成动态图
-    create_gif(density_image_files, "people_number.gif")
-    create_gif(fire_levels_image_files, "fire_evolution.gif")
-    create_gif(congestion_image_files, "congestion_evolution.gif")
-    create_gif(static_image_files, "static_field_evolution.gif")
+    create_gif(density_image_files, str(OUTPUT_DIR / 'people_number.gif'))
+    create_gif(fire_levels_image_files, str(OUTPUT_DIR / 'fire_evolution.gif'))
+    create_gif(congestion_image_files, str(OUTPUT_DIR / 'congestion_evolution.gif'))
+    create_gif(static_image_files, str(OUTPUT_DIR / 'static_field_evolution.gif'))
 
     print("动态图生成完成：")
     print("- density_evolution.gif       # 密度变化动态图")
@@ -885,10 +895,10 @@ if __name__ == '__main__':
     print("全部数据可视化完成！")
 
     # 定义输出的文件名
-    output_file = "people_list.txt"
+    output_file = OUTPUT_DIR / 'people_list.txt'
 
     # 将列表写入txt文件
-    with open(output_file, 'w', encoding='utf-8') as file:
+    with output_file.open('w', encoding='utf-8') as file:
         for person in total_people_list:
             file.write(str(person) + "\n")  # 使用 str() 确保所有类型都能写入
     print(rewards)

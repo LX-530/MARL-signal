@@ -9,13 +9,31 @@
 import math
 from collections import defaultdict
 
-from shapely.geometry import Polygon
+try:
+    from shapely.geometry import Polygon as ShapelyPolygon
+except Exception:
+    ShapelyPolygon = None
 
 free_velocity = 1.2  # 自由流速度
 l = 4
 max_density = 6  # 最大密度值 单位：人/米方
 cri_density = 2.5  # 临界密度值 单位：人/米方
 duration = l / free_velocity  # 时间步长，单位：秒
+
+
+def polygon_area(points):
+    if ShapelyPolygon is not None:
+        return float(ShapelyPolygon(points).area)
+    if not points:
+        return 0.0
+    area = 0.0
+    n = len(points)
+    for i in range(n):
+        x1, y1 = points[i]
+        x2, y2 = points[(i + 1) % n]
+        area += x1 * y2 - x2 * y1
+    return abs(area) / 2.0
+
 
 
 
@@ -26,7 +44,7 @@ class nodeInfo():
         self.cell = cell_inf
         self.initial_number = num_inf  # 疏散开始时元胞内行人数
         if not self.exit:
-            self.area = float(Polygon(cell_inf).area)*1000000 # / 100  # 面积
+            self.area = polygon_area(cell_inf) * 1000000 # / 100  # 面积
         else:
             self.area = float("inf")
         self.initial_density = float(num_inf) / float(self.area)  # 疏散开始时元胞内行人密度
@@ -360,3 +378,8 @@ class baseGraph():
             self.current_num[id-1] = nd.current_number
             self.current_density[id-1] = nd.current_density
         self.fire_info_current = fire_info_all
+# cd D:\github\signal\MARL-signal\QMIX_MARL
+# New-Item -ItemType Directory -Force .\.mplconfig | Out-Null
+# $env:PYTHONPATH="$PWD"
+# $env:MPLCONFIGDIR="$PWD\.mplconfig"
+# python -m utils.CTM.ctm_start.__init__

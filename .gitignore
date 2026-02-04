@@ -1,0 +1,7 @@
+# CTM visualization outputs
+QMIX_MARL/result/ctm_visuals/
+
+# Python caches
+**/__pycache__/
+*.pyc
+*.pyo
