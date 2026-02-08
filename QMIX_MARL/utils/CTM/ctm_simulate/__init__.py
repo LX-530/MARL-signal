@@ -7,7 +7,7 @@
 @Time : 2024/3/1 22:11
 """
 import math
-from collections import defaultdict
+from collections import defaultdict, deque
 
 try:
     from shapely.geometry import Polygon as ShapelyPolygon
@@ -96,6 +96,8 @@ class baseGraph():
         self.fire_info_current = fire_info[0]
         self.agent_cell_ids = agent_cell_ids
         self.energy_domine = energy_domine
+        # Preserve the initial global distances as a fallback.
+        self._global_energy_domine = dict(energy_domine)
         self.cell_type = cell_type
 
 
@@ -162,6 +164,7 @@ class baseGraph():
         self.form_adj_matrix_get_subgroup_ids() #
         self.from_subgroup2directions()  # 获得group的方向对
         self.subgroup_ids2sub_adj_matrix()
+        self.update_energy_domine_by_groups()
 
 
 
@@ -365,6 +368,61 @@ class baseGraph():
                 adj_matrix[group_id.index(x-1)][group_id.index(y-1)] = self.am[x-1][y-1]
             sub_am.append(adj_matrix)
         self.sub_adj_matrixs = sub_am
+
+    def _group_shortest_steps_to_exits(self, group_id_list, sub_adj_matrix):
+        """
+        Compute shortest steps (unit weight) from each node in a subgroup to the nearest exit,
+        using the directed subgroup adjacency matrix. Returns a dict keyed by global node id (1-based).
+        """
+        exit_locals = [i for i, gid in enumerate(group_id_list) if self.exit_info[gid]]
+        if not exit_locals:
+            return {}
+
+        n = len(sub_adj_matrix)
+        rev_adj = [[] for _ in range(n)]
+        for u in range(n):
+            row = sub_adj_matrix[u]
+            for v, w in enumerate(row):
+                if w and w > 0:
+                    rev_adj[v].append(u)
+
+        dist = [None] * n
+        dq = deque(exit_locals)
+        for s in exit_locals:
+            dist[s] = 0
+
+        while dq:
+            u = dq.popleft()
+            du = dist[u]
+            for v in rev_adj[u]:
+                if dist[v] is None:
+                    dist[v] = du + 1
+                    dq.append(v)
+
+        result = {}
+        for local_idx, gid in enumerate(group_id_list):
+            if dist[local_idx] is not None:
+                result[gid + 1] = dist[local_idx]
+        return result
+
+    def update_energy_domine_by_groups(self):
+        """
+        Recompute energy_domine per subgroup using directed edges. Nodes that are not reachable
+        to any exit in their subgroup keep the global baseline value.
+        """
+        if not self.sub_adj_matrixs or not self.groups_ids:
+            return
+
+        new_energy = dict(self._global_energy_domine)
+        for group_id_list, sub_adj in zip(self.groups_ids, self.sub_adj_matrixs):
+            group_energy = self._group_shortest_steps_to_exits(group_id_list, sub_adj)
+            if group_energy:
+                new_energy.update(group_energy)
+
+        self.energy_domine = new_energy
+        for node_id, node in self.nodesinfo.items():
+            if node_id in new_energy:
+                node.energy_domine = new_energy[node_id]
 
 
     def update_node_num_info(self,finished_subgroups, step):

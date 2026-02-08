@@ -9,6 +9,7 @@
 import csv
 import random
 from pathlib import Path
+from collections import deque
 
 from sympy.stats import density
 
@@ -641,6 +642,188 @@ def visualize_numbers(highlight_nodes=None, exit_nodes=None, people_count=None, 
     return str(output_filename)
 
 
+def _flatten_directions(nested_connections):
+    if not nested_connections:
+        return []
+    edges = []
+    for group in nested_connections:
+        edges.extend(group)
+    return edges
+
+
+def compute_layers_from_directions(num_nodes, nested_connections, exit_nodes):
+    """
+    Layer definition:
+      layer 0 = exit nodes
+      layer 1 = one step upstream to exits
+      layer k = k steps upstream
+    """
+    edges = _flatten_directions(nested_connections)
+    if not edges or not exit_nodes:
+        return {}
+
+    rev_adj = [[] for _ in range(num_nodes)]
+    for start, end in edges:
+        rev_adj[end - 1].append(start - 1)
+
+    dist = [None] * num_nodes
+    dq = deque()
+    for e in exit_nodes:
+        if 1 <= e <= num_nodes:
+            dist[e - 1] = 0
+            dq.append(e - 1)
+
+    while dq:
+        u = dq.popleft()
+        du = dist[u]
+        for v in rev_adj[u]:
+            if dist[v] is None:
+                dist[v] = du + 1
+                dq.append(v)
+
+    return {i + 1: d for i, d in enumerate(dist) if d is not None}
+
+
+def find_entrance_nodes(num_nodes, nested_connections, exit_nodes):
+    """
+    Entrance = source nodes in the directed graph (no incoming edges), excluding exits.
+    """
+    edges = _flatten_directions(nested_connections)
+    if not edges:
+        return []
+
+    indeg = [0] * num_nodes
+    outdeg = [0] * num_nodes
+    for start, end in edges:
+        outdeg[start - 1] += 1
+        indeg[end - 1] += 1
+
+    entrance_nodes = []
+    exit_set = set(exit_nodes or [])
+    for i in range(num_nodes):
+        node_id = i + 1
+        if node_id in exit_set:
+            continue
+        if outdeg[i] > 0 and indeg[i] == 0:
+            entrance_nodes.append(node_id)
+    return entrance_nodes
+
+
+def visualize_layers(exit_nodes=None, step=1, nested_connections=None, max_layer=3, show_labels=True):
+    """
+    Visualize layer (distance-to-exit in directed graph) and mark entrances/exits.
+    """
+    csv_path = DATA_DIR / 'outputP.csv'
+
+    def parse_coordinate(cell):
+        matches = re.findall(r"[-+]?\d*\.?\d+", str(cell))
+        return float(matches[0]), float(matches[1])
+
+    df = pd.read_csv(csv_path, header=None, encoding="utf-8")
+    num_nodes = len(df)
+
+    first_poly = [parse_coordinate(df.iloc[0, col]) for col in range(4)]
+    dx, dy = -min(p[0] for p in first_poly), -max(p[1] for p in first_poly)
+
+    fig, ax = plt.subplots(figsize=(16, 12))
+    ax.set_aspect("equal")
+    ax.grid(False)
+
+    centers = {}
+    all_points = []
+
+    layer_map = compute_layers_from_directions(num_nodes, nested_connections, exit_nodes or [])
+    entrance_nodes = find_entrance_nodes(num_nodes, nested_connections, exit_nodes or [])
+
+    layer_colors = {
+        0: "#2ecc71",  # exit
+        1: "#3498db",
+        2: "#f39c12",
+        3: "#9b59b6",
+    }
+    default_layer_color = "#95a5a6"
+    unreachable_color = "#bdc3c7"
+
+    for idx, row in df.iterrows():
+        poly_points = []
+        node_id = idx + 1
+        layer = layer_map.get(node_id)
+
+        if exit_nodes and node_id in exit_nodes:
+            use_color = layer_colors[0]
+            label_text = "E"
+        elif layer is None:
+            use_color = unreachable_color
+            label_text = ""
+        else:
+            use_color = layer_colors.get(layer, default_layer_color if layer > max_layer else layer_colors.get(layer, default_layer_color))
+            label_text = str(layer)
+
+        for col in range(4):
+            x, y = parse_coordinate(row[col])
+            x, y = x + dx, y + dy
+            poly_points.append([x, y])
+            all_points.append([x, y])
+
+        poly = Polygon(
+            poly_points,
+            closed=True,
+            edgecolor="#2c3e50",
+            facecolor=use_color,
+            linewidth=1,
+            alpha=0.75
+        )
+        ax.add_patch(poly)
+
+        center = np.mean(poly_points, axis=0)
+        centers[node_id] = center
+
+        if show_labels and label_text:
+            ax.text(*center, label_text, fontsize=7, color='black',
+                    ha='center', va='center')
+
+    # mark entrances on top of layer colors
+    if entrance_nodes:
+        for node_id in entrance_nodes:
+            if node_id in centers:
+                ax.scatter(centers[node_id][0], centers[node_id][1], s=20,
+                           color="#2980b9", marker='o', zorder=3)
+
+    # optional: draw directions
+    if nested_connections:
+        draw_nested_connections(ax, centers, nested_connections)
+
+    all_points = np.array(all_points)
+    padding = 0.005
+    ax.set_xlim(all_points[:, 0].min() - padding, all_points[:, 0].max() + padding)
+    ax.set_ylim(all_points[:, 1].min() - padding, all_points[:, 1].max() + padding)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_frame_on(False)
+    ax.set_title(f"Layers at Step {step}", fontsize=14)
+
+    legend_patches = [
+        plt.Line2D([0], [0], marker='s', color='w',
+                   markerfacecolor=layer_colors[0], markersize=10, label='Exit (Layer 0)'),
+        plt.Line2D([0], [0], marker='o', color='w',
+                   markerfacecolor="#2980b9", markersize=6, label='Entrance (source)'),
+        plt.Line2D([0], [0], marker='s', color='w',
+                   markerfacecolor=layer_colors[1], markersize=10, label='Layer 1'),
+        plt.Line2D([0], [0], marker='s', color='w',
+                   markerfacecolor=layer_colors[2], markersize=10, label='Layer 2'),
+        plt.Line2D([0], [0], marker='s', color='w',
+                   markerfacecolor=layer_colors[3], markersize=10, label='Layer 3'),
+        plt.Line2D([0], [0], marker='s', color='w',
+                   markerfacecolor=unreachable_color, markersize=10, label='Unreachable'),
+    ]
+    ax.legend(handles=legend_patches, loc='upper left', fontsize='x-small')
+
+    output_filename = OUTPUT_DIR / f"layers_step{step}.png"
+    plt.savefig(output_filename, dpi=150, bbox_inches="tight")
+    plt.close()
+    return str(output_filename)
+
+
 def create_gif(image_files, output_gif):
     images = []
     for file in image_files:
@@ -903,3 +1086,8 @@ if __name__ == '__main__':
             file.write(str(person) + "\n")  # 使用 str() 确保所有类型都能写入
     print(rewards)
     print(f"列表已成功写入到 {output_file}")
+#     cd D:\github\signal\MARL-signal\QMIX_MARL
+# New-Item -ItemType Directory -Force .\.mplconfig | Out-Null
+# $env:PYTHONPATH="$PWD"
+# $env:MPLCONFIGDIR="$PWD\.mplconfig"
+# python -m utils.CTM.ctm_start.__init__
