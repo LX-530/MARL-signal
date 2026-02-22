@@ -46,30 +46,30 @@ duration = l / free_velocity  # 时间步长，单位：秒
 
 
 
-def find_shortest_paths_to_exits(adj_matrix, exits):
-    G = nx.Graph()
+# def find_shortest_paths_to_exits(adj_matrix, exits):
+#     G = nx.Graph()
 
-    # Add nodes and edges based on adjacency matrix
-    num_nodes = len(adj_matrix)
-    for i in range(num_nodes):
-        for j in range(i + 1, num_nodes):
-            if adj_matrix[i][j] != 0:
-                G.add_edge(i + 1, j + 1, weight=adj_matrix[i][j])
+#     # Add nodes and edges based on adjacency matrix
+#     num_nodes = len(adj_matrix)
+#     for i in range(num_nodes):
+#         for j in range(i + 1, num_nodes):
+#             if adj_matrix[i][j] != 0:
+#                 G.add_edge(i + 1, j + 1, weight=adj_matrix[i][j])
 
-    # Calculate shortest paths to all exit nodes
-    shortest_paths = {}
-    for node in G.nodes():
-        shortest_path_length = float('inf')
-        for exit_node in exits:
-            try:
-                path_length = nx.shortest_path_length(G, source=node, target=exit_node, weight='weight')
-                if path_length < shortest_path_length:
-                    shortest_path_length = path_length
-            except nx.NetworkXNoPath:
-                continue
-        shortest_paths[node] = shortest_path_length
+#     # Calculate shortest paths to all exit nodes
+#     shortest_paths = {}
+#     for node in G.nodes():
+#         shortest_path_length = float('inf')
+#         for exit_node in exits:
+#             try:
+#                 path_length = nx.shortest_path_length(G, source=node, target=exit_node, weight='weight')
+#                 if path_length < shortest_path_length:
+#                     shortest_path_length = path_length
+#             except nx.NetworkXNoPath:
+#                 continue
+#         shortest_paths[node] = shortest_path_length
 
-    return shortest_paths, G
+#     return shortest_paths, G
 
 def visualize_graph(G, shortest_paths):
     pos = nx.spring_layout(G)  # positions for all nodes - seed for reproducibility
