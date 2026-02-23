@@ -43,7 +43,27 @@ l = 4
 max_density = 6  # 最大密度值 单位：人/米方
 cri_density = 2.5  # 临界密度值 单位：人/米方
 duration = l / free_velocity  # 时间步长，单位：秒
+# Layer targets (requested split: layer4 -> layer3 -> layer2 -> layer1 exits).
+LAYER2_TARGETS = [109, 117, 134, 138, 157]
+LAYER3_TARGETS = [167, 170, 176]
+LAYER4_TARGETS = [198, 205, 217, 228]
 
+# Cross-layer one-way connectors (upstream -> downstream).
+CONNECTOR_EDGES = [
+    (198, 164), (205, 168), (217, 172), (228, 173),  # layer4 -> layer3
+    (167, 109), (170, 120), (176, 147),              # layer3 -> layer2
+    (109, 63), (117, 71), (134, 97), (138, 96), (157, 48),  # layer2 -> layer1
+]
+
+
+def _build_layer_sets(num_nodes):
+    # Keep the exact user-requested ranges.
+    return {
+        "layer1": set(range(1, 105)),
+        "layer2": set(range(104, 163)),
+        "layer3": set(range(164, 177)),
+        "layer4": set(range(177, num_nodes + 1)),
+    }
 
 
 # def find_shortest_paths_to_exits(adj_matrix, exits):
@@ -85,30 +105,125 @@ def visualize_graph(G, shortest_paths):
     plt.axis('off')  # Turn off the axis
     plt.show()
 
-def find_shortest_paths_to_exits(adj_matrix, exits):
-    G = nx.Graph()
+def _shortest_paths_layer(adj_matrix, layer_nodes, target_nodes):
+    """Compute shortest path length (hop count) within a layer subgraph."""
+    layer_nodes = sorted(layer_nodes)
+    layer_set = set(layer_nodes)
+    targets = [t for t in target_nodes if t in layer_set]
 
-    # Add nodes and edges based on adjacency matrix
+    G = nx.Graph()
+    G.add_nodes_from(layer_nodes)
+
+    for i in layer_nodes:
+        row = adj_matrix[i - 1]
+        for j in layer_nodes:
+            if j > i and row[j - 1] != 0:
+                G.add_edge(i, j, weight=1)
+
+    if not targets:
+        return {n: float('inf') for n in layer_nodes}
+
+    lengths = nx.multi_source_dijkstra_path_length(G, targets, weight='weight')
+    return {n: lengths.get(n, float('inf')) for n in layer_nodes}
+
+
+def _shortest_paths_global(adj_matrix, target_nodes):
+    """Fallback shortest path length (hop count) on full graph."""
+    G = nx.Graph()
     num_nodes = len(adj_matrix)
+    G.add_nodes_from(range(1, num_nodes + 1))
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
             if adj_matrix[i][j] != 0:
-                G.add_edge(i + 1, j + 1, weight=int(1))  # Convert weight to int
+                G.add_edge(i + 1, j + 1, weight=1)
 
-    # Calculate shortest paths to all exit nodes
+    targets = [t for t in target_nodes if 1 <= t <= num_nodes]
+    if not targets:
+        return {n: float('inf') for n in range(1, num_nodes + 1)}
+
+    lengths = nx.multi_source_dijkstra_path_length(G, targets, weight='weight')
+    return {n: lengths.get(n, float('inf')) for n in range(1, num_nodes + 1)}
+
+
+def find_shortest_paths_to_exits(adj_matrix, exits):
+    """
+    Layer-aware shortest paths:
+    layer4 -> layer3 targets, layer3 -> layer2 targets,
+    layer2 -> layer1 targets, layer1 -> real exits.
+    """
+    num_nodes = len(adj_matrix)
+    layers = _build_layer_sets(num_nodes)
+    layer1 = layers["layer1"]
+    layer2 = layers["layer2"]
+    layer3 = layers["layer3"]
+    layer4 = layers["layer4"]
+
     shortest_paths = {}
-    for node in G.nodes():
-        shortest_path_length = float('inf')
-        for exit_node in exits:
-            try:
-                path_length = nx.shortest_path_length(G, source=node, target=exit_node, weight='weight')
-                if path_length < shortest_path_length:
-                    shortest_path_length = path_length
-            except nx.NetworkXNoPath:
-                continue
-        shortest_paths[node] = shortest_path_length
+    shortest_paths.update(_shortest_paths_layer(adj_matrix, layer1, [e for e in exits if e in layer1]))
+    shortest_paths.update(_shortest_paths_layer(adj_matrix, layer2, LAYER2_TARGETS))
+    shortest_paths.update(_shortest_paths_layer(adj_matrix, layer3, LAYER3_TARGETS))
+    shortest_paths.update(_shortest_paths_layer(adj_matrix, layer4, LAYER4_TARGETS))
+
+    # The requested ranges skip node 163; fill any uncovered nodes via global fallback.
+    all_nodes = set(range(1, num_nodes + 1))
+    uncovered_nodes = all_nodes - set(shortest_paths.keys())
+    if uncovered_nodes:
+        fallback = _shortest_paths_global(adj_matrix, exits)
+        for node_id in uncovered_nodes:
+            shortest_paths[node_id] = fallback.get(node_id, float('inf'))
 
     return shortest_paths
+
+
+def _build_shortest_path_edges(adj_matrix, layer_nodes, target_nodes, blocked_nodes=None):
+    """
+    Build a directed edge list that routes each node in a layer to the nearest target
+    using hop-count shortest paths. Nodes in blocked_nodes are skipped (e.g., signal-controlled).
+    """
+    layer_nodes = sorted(layer_nodes)
+    layer_set = set(layer_nodes)
+    targets = [t for t in target_nodes if t in layer_set]
+    blocked = set(blocked_nodes or [])
+
+    if not targets:
+        return []
+
+    # BFS on the layer subgraph (unweighted)
+    dist = {n: float('inf') for n in layer_nodes}
+    dq = deque()
+    for t in targets:
+        dist[t] = 0
+        dq.append(t)
+
+    # Precompute neighbors within the layer
+    neighbors = {}
+    for i in layer_nodes:
+        row = adj_matrix[i - 1]
+        nbrs = []
+        for j in layer_nodes:
+            if j != i and row[j - 1] != 0:
+                nbrs.append(j)
+        neighbors[i] = nbrs
+
+    while dq:
+        u = dq.popleft()
+        for v in neighbors[u]:
+            if dist[v] == float('inf'):
+                dist[v] = dist[u] + 1
+                dq.append(v)
+
+    edges = []
+    for n in layer_nodes:
+        if n in blocked or n in targets:
+            continue
+        if dist[n] == float('inf'):
+            continue
+        candidates = [v for v in neighbors[n] if dist.get(v, float('inf')) == dist[n] - 1]
+        if not candidates:
+            continue
+        next_node = min(candidates)
+        edges.append((n, next_node))
+    return edges
 
 def change_door(original_door_size, no1, no2, number):
     original_door_size[no1 - 1][no2 - 1] = number
@@ -265,6 +380,10 @@ def init(fire_info=None):
     change_door_1(original_door_size, 174, 146, 0)
     change_door_1(original_door_size, 198, 164, 0)
 
+    exits = [100, 101, 102, 103]  #鍑哄彛鐨勭紪鍙?
+
+    # (layered shortest-path fixed directions moved below)
+
     change_door(original_door_size, 183, 243, 1.4)
     change_door(original_door_size, 184, 244, 1.4)
     change_door(original_door_size, 185, 245, 1.4)
@@ -290,7 +409,34 @@ def init(fire_info=None):
     change_door(original_door_size, 240, 265, 1.4)
     change_door(original_door_size, 239, 266, 1.4)
 
-    exits = [100, 101, 102, 103]  #出口的编号
+    # ---- Layered shortest-path default directions ----
+    num_nodes = len(original_door_size)
+    layers = _build_layer_sets(num_nodes)
+    layer1 = layers["layer1"]
+    layer2 = layers["layer2"]
+    layer3 = layers["layer3"]
+    layer4 = layers["layer4"]
+
+    connector_edges = list(CONNECTOR_EDGES)
+
+    # Build shortest-path directions within each layer.
+    fixed_cell = []
+    fixed_cell += _build_shortest_path_edges(original_door_size, layer1, [e for e in exits if e in layer1], blocked_nodes=None)
+    fixed_cell += _build_shortest_path_edges(original_door_size, layer2, LAYER2_TARGETS, blocked_nodes=None)
+    fixed_cell += _build_shortest_path_edges(original_door_size, layer3, LAYER3_TARGETS, blocked_nodes=None)
+    fixed_cell += _build_shortest_path_edges(original_door_size, layer4, LAYER4_TARGETS, blocked_nodes=None)
+    fixed_cell += connector_edges
+
+    # Manual edge overrides + force all cross-layer connectors one-way.
+    manual_blocked_edges = {(135, 98), (98, 135), (159, 73), (73, 159)}
+    reverse_connector_edges = {(b, a) for (a, b) in connector_edges}
+    blocked_edges = manual_blocked_edges | reverse_connector_edges
+    forced_edges = list(connector_edges)
+
+    fixed_cell = [e for e in fixed_cell if e not in blocked_edges]
+    for e in forced_edges:
+        if e not in fixed_cell:
+            fixed_cell.append(e)
 
     energy_domine = find_shortest_paths_to_exits(original_door_size, exits)
 
@@ -318,7 +464,9 @@ def init(fire_info=None):
      fire_info,
      agent_cell_ids,
      energy_domine,
-    cell_type
+    cell_type,
+    blocked_edges,
+    forced_edges
     )
 
 

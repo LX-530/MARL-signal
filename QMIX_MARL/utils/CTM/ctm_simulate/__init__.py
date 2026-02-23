@@ -65,7 +65,21 @@ class nodeInfo():
 
 
 class baseGraph():
-    def __init__(self, exit_inf, cell_inf, init_num_inf, adjacency_mat,sigal_effect_cells,fixed_direction_cell,fire_info,agent_cell_ids,energy_domine,cell_type):
+    def __init__(
+        self,
+        exit_inf,
+        cell_inf,
+        init_num_inf,
+        adjacency_mat,
+        sigal_effect_cells,
+        fixed_direction_cell,
+        fire_info,
+        agent_cell_ids,
+        energy_domine,
+        cell_type,
+        blocked_direction_edges=None,
+        forced_direction_edges=None
+    ):
         #实例化每一个node
         self.nodesinfo = {}   #键的编号为实际的编号，即以1为开始
         for i in range(len(exit_inf)):
@@ -83,8 +97,10 @@ class baseGraph():
         self.current_density = [0 for _ in init_num_inf]  # 一开始初始化所有的元胞数量为0
         self.exs_list = []
         self.am = adjacency_mat  # 无向图的邻接矩阵
-        self.fixed_direction_cell = fixed_direction_cell #不受节点控制的元胞方向
-        self.sigal_effect_cells = sigal_effect_cells #每个动作所影响的边的方向[（id1,id2）]
+        self.fixed_direction_cell = fixed_direction_cell
+        self.blocked_direction_edges = set(blocked_direction_edges or [])
+        self.forced_direction_edges = list(forced_direction_edges or [])
+        self.sigal_effect_cells = sigal_effect_cells
         self.signal_available_direction = self.get_signal_available_direction()  # 每个signal可以选择的方向
         self.all_direction_cells = []
         self.get_group_adjacency_matrix = []
@@ -140,6 +156,17 @@ class baseGraph():
             direction = action_dict[int(action) + 1]
             directions.extend(direction)
         all_direction_cells = directions + self.fixed_direction_cell
+
+        # Apply global edge rules after action composition.
+        if self.blocked_direction_edges:
+            all_direction_cells = [e for e in all_direction_cells if e not in self.blocked_direction_edges]
+        if self.forced_direction_edges:
+            for edge in self.forced_direction_edges:
+                if edge not in all_direction_cells:
+                    all_direction_cells.append(edge)
+                reverse_edge = (edge[1], edge[0])
+                if reverse_edge in all_direction_cells and reverse_edge not in self.forced_direction_edges:
+                    all_direction_cells = [e for e in all_direction_cells if e != reverse_edge]
 
         remove_set = set()
         # 遍历所有方向对
