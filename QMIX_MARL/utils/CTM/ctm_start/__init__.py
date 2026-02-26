@@ -44,68 +44,91 @@ cri_density = 2.5  # 临界密度值 单位：人/米方
 duration = l / free_velocity  # 时间步长，单位：秒
 
 
+LAYER2_TARGETS = [109, 117, 134, 138, 157]
+LAYER3_TARGETS = [167, 170, 176]
+LAYER4_TARGETS = [198, 205, 217, 228]
+DEFAULT_EXIT_NODES = [100, 101, 102, 103]
+
+def _build_layer_sets(num_nodes):
+    # Keep the exact user-requested ranges.
+    return {
+        "layer1": set(range(1, 105)),
+        "layer2": set(range(104, 163)),
+        "layer3": set(range(164, 177)),
+        "layer4": set(range(177, num_nodes + 1)),
+    }
+
 
 def find_shortest_paths_to_exits(adj_matrix, exits):
-    G = nx.Graph()
-
-    # Add nodes and edges based on adjacency matrix
     num_nodes = len(adj_matrix)
+    exits = exits or DEFAULT_EXIT_NODES
+
+    graph = nx.Graph()
+    graph.add_nodes_from(range(1, num_nodes + 1))
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
             if adj_matrix[i][j] != 0:
-                G.add_edge(i + 1, j + 1, weight=adj_matrix[i][j])
+                graph.add_edge(i + 1, j + 1, weight=1.0)
 
-    # Calculate shortest paths to all exit nodes
+    layer_sets = _build_layer_sets(num_nodes)
     shortest_paths = {}
-    for node in G.nodes():
-        shortest_path_length = float('inf')
-        for exit_node in exits:
-            try:
-                path_length = nx.shortest_path_length(G, source=node, target=exit_node, weight='weight')
-                if path_length < shortest_path_length:
-                    shortest_path_length = path_length
-            except nx.NetworkXNoPath:
-                continue
-        shortest_paths[node] = shortest_path_length
 
-    return shortest_paths, G
+    layer1_nodes = layer_sets["layer1"] & set(graph.nodes)
+    layer1_exits = [node for node in exits if node in layer1_nodes]
+    if layer1_exits:
+        layer1_graph = graph.subgraph(layer1_nodes)
+        layer1_lengths = nx.multi_source_dijkstra_path_length(layer1_graph, layer1_exits, weight='weight')
+        for node in layer1_nodes:
+            shortest_paths[node] = layer1_lengths.get(node, float('inf'))
+    else:
+        for node in layer1_nodes:
+            shortest_paths[node] = float('inf')
 
-def visualize_graph(G, shortest_paths):
-    pos = nx.spring_layout(G)  # positions for all nodes - seed for reproducibility
+    layer_chain = [
+        ("layer2", LAYER2_TARGETS, "layer1"),
+        ("layer3", LAYER3_TARGETS, "layer2"),
+        ("layer4", LAYER4_TARGETS, "layer3"),
+    ]
 
-    labels = {node: f"{node} ({shortest_paths[node]})" for node in G.nodes()}
+    for layer_name, targets, next_layer_name in layer_chain:
+        current_nodes = layer_sets[layer_name] & set(graph.nodes)
+        next_nodes = layer_sets[next_layer_name] & set(graph.nodes)
+        current_graph = graph.subgraph(current_nodes)
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    nx.draw_networkx_nodes(G, pos, node_size=700, alpha=0.9, node_color='skyblue', ax=ax)
-    nx.draw_networkx_edges(G, pos, width=1.5, alpha=0.5, edge_color='gray', ax=ax)
-    nx.draw_networkx_labels(G, pos, labels, font_size=14, font_family="sans-serif", ax=ax)
+        target_entry_cost = {}
+        for target in targets:
+            best_cost = float('inf')
+            if target in graph:
+                for neighbor in graph.neighbors(target):
+                    if neighbor not in next_nodes:
+                        continue
+                    neighbor_cost = shortest_paths.get(neighbor, float('inf'))
+                    if neighbor_cost == float('inf'):
+                        continue
+                    total_cost = float(graph[target][neighbor].get('weight', 1.0)) + neighbor_cost
+                    if total_cost < best_cost:
+                        best_cost = total_cost
+            target_entry_cost[target] = best_cost
 
-    ax.set_title("Graph Visualization with Shortest Paths to Exits")
-    plt.axis('off')  # Turn off the axis
-    plt.show()
+        for node in current_nodes:
+            best_cost = float('inf')
+            for target, entry_cost in target_entry_cost.items():
+                if entry_cost == float('inf') or target not in current_graph:
+                    continue
+                try:
+                    local_cost = nx.shortest_path_length(current_graph, source=node, target=target, weight='weight')
+                except nx.NetworkXNoPath:
+                    continue
+                total_cost = local_cost + entry_cost
+                if total_cost < best_cost:
+                    best_cost = total_cost
+            shortest_paths[node] = best_cost
 
-def find_shortest_paths_to_exits(adj_matrix, exits):
-    G = nx.Graph()
-
-    # Add nodes and edges based on adjacency matrix
-    num_nodes = len(adj_matrix)
-    for i in range(num_nodes):
-        for j in range(i + 1, num_nodes):
-            if adj_matrix[i][j] != 0:
-                G.add_edge(i + 1, j + 1, weight=int(1))  # Convert weight to int
-
-    # Calculate shortest paths to all exit nodes
-    shortest_paths = {}
-    for node in G.nodes():
-        shortest_path_length = float('inf')
-        for exit_node in exits:
-            try:
-                path_length = nx.shortest_path_length(G, source=node, target=exit_node, weight='weight')
-                if path_length < shortest_path_length:
-                    shortest_path_length = path_length
-            except nx.NetworkXNoPath:
-                continue
-        shortest_paths[node] = shortest_path_length
+    valid_exits = [node for node in exits if node in graph.nodes]
+    global_lengths = nx.multi_source_dijkstra_path_length(graph, valid_exits, weight='weight') if valid_exits else {}
+    for node in range(1, num_nodes + 1):
+        if node not in shortest_paths or shortest_paths[node] == float('inf'):
+            shortest_paths[node] = global_lengths.get(node, float('inf'))
 
     return shortest_paths
 
@@ -292,6 +315,111 @@ def init(fire_info=None):
     exits = [100, 101, 102, 103]  #出口的编号
 
     energy_domine = find_shortest_paths_to_exits(original_door_size, exits)
+    shortest_path_arrows = []
+    path_graph = nx.Graph()
+    path_graph.add_nodes_from(range(1, len(original_door_size) + 1))
+    for i in range(len(original_door_size)):
+        for j in range(i + 1, len(original_door_size)):
+            if original_door_size[i][j] != 0:
+                path_graph.add_edge(i + 1, j + 1, weight=1.0)
+
+    layer_sets = _build_layer_sets(len(original_door_size))
+    layer_targets = {
+        "layer1": set(exits),
+        "layer2": set(LAYER2_TARGETS),
+        "layer3": set(LAYER3_TARGETS),
+        "layer4": set(LAYER4_TARGETS),
+    }
+    cross_layer_next = {
+        "layer4": "layer3",
+        "layer3": "layer2",
+        "layer2": "layer1",
+    }
+
+    def get_layer(node_id):
+        # Keep layer priority consistent with shortest-path assignment.
+        if node_id in layer_sets["layer1"]:
+            return "layer1"
+        if node_id in layer_sets["layer2"]:
+            return "layer2"
+        if node_id in layer_sets["layer3"]:
+            return "layer3"
+        if node_id in layer_sets["layer4"]:
+            return "layer4"
+        return None
+
+    layer_closest_dist = {}
+    layer_assigned_target = {}
+    layer_target_lengths = {}
+    for layer_name, nodes in layer_sets.items():
+        valid_nodes = nodes & set(path_graph.nodes)
+        valid_targets = layer_targets[layer_name] & valid_nodes
+        sub_graph = path_graph.subgraph(valid_nodes)
+        per_target_lengths = {}
+        for target in valid_targets:
+            per_target_lengths[target] = nx.single_source_dijkstra_path_length(sub_graph, target, weight='weight')
+        layer_target_lengths[layer_name] = per_target_lengths
+
+        closest_dist = {}
+        assigned_target = {}
+        for node in valid_nodes:
+            best = (float('inf'), float('inf'))
+            best_target = None
+            for target, lengths in per_target_lengths.items():
+                dist = lengths.get(node, float('inf'))
+                if (dist, target) < best:
+                    best = (dist, target)
+                    best_target = target
+            closest_dist[node] = best[0]
+            assigned_target[node] = best_target
+        layer_closest_dist[layer_name] = closest_dist
+        layer_assigned_target[layer_name] = assigned_target
+
+    for node in sorted(path_graph.nodes):
+        node_layer = get_layer(node)
+        if node_layer is None:
+            continue
+
+        # If already at this layer's target, cross to next layer (if exists).
+        if node_layer in cross_layer_next and node in layer_targets[node_layer]:
+            next_layer = cross_layer_next[node_layer]
+            candidates = []
+            for neighbor in path_graph.neighbors(node):
+                if get_layer(neighbor) != next_layer:
+                    continue
+                rank = (
+                    layer_closest_dist.get(next_layer, {}).get(neighbor, float('inf')),
+                    energy_domine.get(neighbor, float('inf')),
+                    neighbor,
+                )
+                candidates.append((rank, neighbor))
+            if candidates:
+                shortest_path_arrows.append((node, min(candidates)[1]))
+            continue
+
+        # Otherwise, always move within current layer toward nearest target of this layer.
+        target = layer_assigned_target.get(node_layer, {}).get(node)
+        if target is None:
+            continue
+        current_dist = layer_target_lengths[node_layer][target].get(node, float('inf'))
+        candidates = []
+        for neighbor in path_graph.neighbors(node):
+            if get_layer(neighbor) != node_layer:
+                continue
+            neighbor_dist = layer_target_lengths[node_layer][target].get(neighbor, float('inf'))
+            if neighbor_dist < current_dist:
+                rank = (
+                    neighbor_dist,
+                    0 if neighbor in layer_targets[node_layer] else 1,
+                    energy_domine.get(neighbor, float('inf')),
+                    neighbor,
+                )
+                candidates.append((rank, neighbor))
+        if candidates:
+            shortest_path_arrows.append((node, min(candidates)[1]))
+    shortest_path_arrows = [shortest_path_arrows]
+    # Make shortest-path arrows effective in simulation flow, not only visualization.
+    fixed_cell = list(dict.fromkeys(fixed_cell + shortest_path_arrows[0]))
 
 
     Position_cells =[]
@@ -307,7 +435,7 @@ def init(fire_info=None):
 
     TF_exit = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False,False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
 
-    return baseGraph(
+    graph = baseGraph(
         TF_exit,
      Position_cells,
            people_number,
@@ -319,6 +447,8 @@ def init(fire_info=None):
      energy_domine,
     cell_type
     )
+    graph.shortest_path_arrows = shortest_path_arrows
+    return graph
 
 
 #执行一次动作,即启动CTM一次
@@ -756,6 +886,7 @@ if __name__ == '__main__':
     #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0]
     # ]
     g = init(fire_info)
+    path_connections = getattr(g, "shortest_path_arrows", g.groups_directions)
     static_actions = [0] * len(g.sigal_effect_cells)
     action_space = [static_actions]
 
@@ -795,7 +926,7 @@ if __name__ == '__main__':
 
         #生成可视化图片
         density_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
-                                                     g.current_num, i, g.groups_directions, 'people'))
+                                                     g.current_num, i, path_connections, 'people'))
     #     fire_levels_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
     #                                                      g.fire_levels, i, g.groups_directions, 'fire_levels'))
     #     congestion_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
