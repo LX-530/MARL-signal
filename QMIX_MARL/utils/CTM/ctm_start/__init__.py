@@ -1,4 +1,4 @@
-"""
+﻿"""
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 @Project : MASA-QMIX
@@ -773,7 +773,7 @@ if __name__ == '__main__':
     iterations = []
     location = []
     rewards = 0
-    for i in range(0, 97):
+    for i in range(0, 10):
         actions = static_actions
         g.from_actions_get_groupId_submatrix(actions)
         g = start_Sub_CTM(g, i)
@@ -796,110 +796,111 @@ if __name__ == '__main__':
         #生成可视化图片
         density_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
                                                      g.current_num, i, g.groups_directions, 'people'))
-        fire_levels_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
-                                                         g.fire_levels, i, g.groups_directions, 'fire_levels'))
-        congestion_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
-                                                        g.congestion_levels, i, g.groups_directions, 'congestion'))
-        static_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
-                                                    g.static_field, i, g.groups_directions, 'static'))
-        # visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
-        #                                              location, i, g.groups_directions, 'location')
-    #
-    # 1. 静态场变化图
-    plt.figure(figsize=(10, 4))
-    plt.plot(iterations, static_fields, color='blue')
-    plt.title('Static Field over Iterations')
-    plt.xlabel('Time step')
-    plt.ylabel('Static Field')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'static_field_plot.png')
-    plt.close()
+    #     fire_levels_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #                                                      g.fire_levels, i, g.groups_directions, 'fire_levels'))
+    #     congestion_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #                                                     g.congestion_levels, i, g.groups_directions, 'congestion'))
+    #     static_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #                                                 g.static_field, i, g.groups_directions, 'static'))
+    #     # visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #     #                                              location, i, g.groups_directions, 'location')
+    # #
+    # # 1. 静态场变化图
+    # plt.figure(figsize=(10, 4))
+    # plt.plot(iterations, static_fields, color='blue')
+    # plt.title('Static Field over Iterations')
+    # plt.xlabel('Time step')
+    # plt.ylabel('Static Field')
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.savefig(OUTPUT_DIR / 'static_field_plot.png')
+    # plt.close()
 
-    # 2. 火灾等级变化图
-    plt.figure(figsize=(10, 4))
-    plt.plot(iterations, fire_levels_list, color='red')
-    plt.title('Fire Levels over Iterations')
-    plt.xlabel('Time step')
-    plt.ylabel('Fire Levels')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'fire_levels_plot.png')
-    plt.close()
+    # # 2. 火灾等级变化图
+    # plt.figure(figsize=(10, 4))
+    # plt.plot(iterations, fire_levels_list, color='red')
+    # plt.title('Fire Levels over Iterations')
+    # plt.xlabel('Time step')
+    # plt.ylabel('Fire Levels')
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.savefig(OUTPUT_DIR / 'fire_levels_plot.png')
+    # plt.close()
 
-    # 3. 拥堵等级变化图
-    plt.figure(figsize=(10, 4))
-    plt.plot(iterations, congestion_levels_list, color='green')
-    plt.title('Congestion Levels over Iterations')
-    plt.xlabel('Time step')
-    plt.ylabel('Congestion Levels')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'congestion_levels_plot.png')
-    plt.close()
+    # # 3. 拥堵等级变化图
+    # plt.figure(figsize=(10, 4))
+    # plt.plot(iterations, congestion_levels_list, color='green')
+    # plt.title('Congestion Levels over Iterations')
+    # plt.xlabel('Time step')
+    # plt.ylabel('Congestion Levels')
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.savefig(OUTPUT_DIR / 'congestion_levels_plot.png')
+    # plt.close()
 
-    # 4. 累积火灾等级图
-    cumulative_fire = [sum(fire_levels_list[:i + 1]) for i in range(len(fire_levels_list))]
-    plt.figure(figsize=(10, 4))
-    plt.plot(iterations, cumulative_fire, color='orange')
-    plt.title('Cumulative Fire Levels')
-    plt.xlabel('Time step')
-    plt.ylabel('Cumulative Levels')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'cumulative_fire_levels_plot.png')
-    plt.close()
+    # # 4. 累积火灾等级图
+    # cumulative_fire = [sum(fire_levels_list[:i + 1]) for i in range(len(fire_levels_list))]
+    # plt.figure(figsize=(10, 4))
+    # plt.plot(iterations, cumulative_fire, color='orange')
+    # plt.title('Cumulative Fire Levels')
+    # plt.xlabel('Time step')
+    # plt.ylabel('Cumulative Levels')
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.savefig(OUTPUT_DIR / 'cumulative_fire_levels_plot.png')
+    # plt.close()
 
-    # 5. 累积拥堵等级图
-    cumulative_congestion = [sum(congestion_levels_list[:i + 1]) for i in range(len(congestion_levels_list))]
-    plt.figure(figsize=(10, 4))
-    plt.plot(iterations, cumulative_congestion, color='purple')
-    plt.title('Cumulative Congestion Levels')
-    plt.xlabel('Time step')
-    plt.ylabel('Cumulative Levels')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'cumulative_congestion_levels_plot.png')
-    plt.close()
+    # # 5. 累积拥堵等级图
+    # cumulative_congestion = [sum(congestion_levels_list[:i + 1]) for i in range(len(congestion_levels_list))]
+    # plt.figure(figsize=(10, 4))
+    # plt.plot(iterations, cumulative_congestion, color='purple')
+    # plt.title('Cumulative Congestion Levels')
+    # plt.xlabel('Time step')
+    # plt.ylabel('Cumulative Levels')
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.savefig(OUTPUT_DIR / 'cumulative_congestion_levels_plot.png')
+    # plt.close()
 
-    # 6. 新增：总人数变化图
-    plt.figure(figsize=(10, 4))
-    plt.plot(iterations, total_people_list, color='#6a0dad', linestyle='-', marker='o', markersize=4)
-    plt.title('Total People in Evacuation Area')
-    plt.xlabel('Time step')
-    plt.ylabel('Number of People')
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'total_people_plot.png', dpi=300)
-    plt.close()
+    # # 6. 新增：总人数变化图
+    # plt.figure(figsize=(10, 4))
+    # plt.plot(iterations, total_people_list, color='#6a0dad', linestyle='-', marker='o', markersize=4)
+    # plt.title('Total People in Evacuation Area')
+    # plt.xlabel('Time step')
+    # plt.ylabel('Number of People')
+    # plt.grid(True, alpha=0.3)
+    # plt.tight_layout()
+    # plt.savefig(OUTPUT_DIR / 'total_people_plot.png', dpi=300)
+    # plt.close()
 
-    print("六张分析图已保存：")
-    print("- static_field_plot.png        # 静态场趋势")
-    print("- fire_levels_plot.png         # 实时火灾等级")
-    print("- congestion_levels_plot.png   # 实时拥堵等级")
-    print("- cumulative_fire_levels_plot.png    # 累积火灾影响")
-    print("- cumulative_congestion_levels_plot.png  # 累积拥堵影响")
-    print("- total_people_plot.png        # 总人数变化\n")
+    # print("六张分析图已保存：")
+    # print("- static_field_plot.png        # 静态场趋势")
+    # print("- fire_levels_plot.png         # 实时火灾等级")
+    # print("- congestion_levels_plot.png   # 实时拥堵等级")
+    # print("- cumulative_fire_levels_plot.png    # 累积火灾影响")
+    # print("- cumulative_congestion_levels_plot.png  # 累积拥堵影响")
+    # print("- total_people_plot.png        # 总人数变化\n")
 
-    # 生成动态图
-    create_gif(density_image_files, str(OUTPUT_DIR / 'people_number.gif'))
-    create_gif(fire_levels_image_files, str(OUTPUT_DIR / 'fire_evolution.gif'))
-    create_gif(congestion_image_files, str(OUTPUT_DIR / 'congestion_evolution.gif'))
-    create_gif(static_image_files, str(OUTPUT_DIR / 'static_field_evolution.gif'))
+    # # 生成动态图
+    # create_gif(density_image_files, str(OUTPUT_DIR / 'people_number.gif'))
+    # create_gif(fire_levels_image_files, str(OUTPUT_DIR / 'fire_evolution.gif'))
+    # create_gif(congestion_image_files, str(OUTPUT_DIR / 'congestion_evolution.gif'))
+    # create_gif(static_image_files, str(OUTPUT_DIR / 'static_field_evolution.gif'))
 
-    print("动态图生成完成：")
-    print("- density_evolution.gif       # 密度变化动态图")
-    print("- fire_evolution.gif          # 火灾发展动态图")
-    print("- congestion_evolution.gif    # 拥堵演变动态图")
-    print("- static_field_evolution.gif  # 静态场更新过程\n")
-    print("全部数据可视化完成！")
+    # print("动态图生成完成：")
+    # print("- density_evolution.gif       # 密度变化动态图")
+    # print("- fire_evolution.gif          # 火灾发展动态图")
+    # print("- congestion_evolution.gif    # 拥堵演变动态图")
+    # print("- static_field_evolution.gif  # 静态场更新过程\n")
+    # print("全部数据可视化完成！")
 
-    # 定义输出的文件名
-    output_file = OUTPUT_DIR / 'people_list.txt'
+    # # 定义输出的文件名
+    # output_file = OUTPUT_DIR / 'people_list.txt'
 
-    # 将列表写入txt文件
-    with output_file.open('w', encoding='utf-8') as file:
-        for person in total_people_list:
-            file.write(str(person) + "\n")  # 使用 str() 确保所有类型都能写入
-    print(rewards)
-    print(f"列表已成功写入到 {output_file}")
+    # # 将列表写入txt文件
+    # with output_file.open('w', encoding='utf-8') as file:
+    #     for person in total_people_list:
+    #         file.write(str(person) + "\n")  # 使用 str() 确保所有类型都能写入
+    # print(rewards)
+    # print(f"列表已成功写入到 {output_file}")
+    # python -m utils.CTM.ctm_start.__init__
