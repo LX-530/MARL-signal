@@ -47,7 +47,8 @@ duration = l / free_velocity  # 时间步长，单位：秒
 LAYER2_TARGETS = [109, 117, 134, 138, 157]
 LAYER3_TARGETS = [167, 170, 176]
 LAYER4_TARGETS = [198, 205, 217, 228]
-DEFAULT_EXIT_NODES = [100, 101, 102, 103]
+DEFAULT_EXIT_NODES = [100, 101, 102]
+HIDDEN_NODES = {103}
 
 def _build_layer_sets(num_nodes):
     # Keep the exact user-requested ranges.
@@ -188,7 +189,7 @@ def init(fire_info=None):
                   (18, 19), (19, 20), (20, 39), (39, 40), (40, 41), (41, 42), (42, 37), (43, 38), (51, 50), (50, 49),
                   (49, 48), (48, 47), (47, 46), (46, 45), (45, 42), (44, 43), (23, 24), (24, 25), (25, 26), (26, 27),
                   (22, 33), (33, 32), (32, 31), (31, 30), (21, 34), (34, 35), (35, 36), (36, 37), (37, 30), (30, 27),
-                  (27, 102), (38, 29), (29, 28), (28, 103),
+                  (27, 102), (38, 29), (29, 28),
                   (75, 74), (74, 73), (73, 72), (72, 46), (81, 80), (80, 79), (79, 78), (78, 77), (77, 76), (76, 75)
 
                   ]
@@ -312,7 +313,13 @@ def init(fire_info=None):
     change_door(original_door_size, 240, 265, 1.4)
     change_door(original_door_size, 239, 266, 1.4)
 
-    exits = [100, 101, 102, 103]  #出口的编号
+    # Remove exit 103 entirely: detach all its graph relations.
+    exit_103_idx = 103 - 1
+    for idx in range(len(original_door_size)):
+        original_door_size[exit_103_idx][idx] = 0
+        original_door_size[idx][exit_103_idx] = 0
+
+    exits = [100, 101, 102]  #出口的编号
 
     energy_domine = find_shortest_paths_to_exits(original_door_size, exits)
     shortest_path_arrows = []
@@ -434,6 +441,7 @@ def init(fire_info=None):
 
 
     TF_exit = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True, True, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False,False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+    TF_exit[103 - 1] = False
 
     graph = baseGraph(
         TF_exit,
@@ -506,6 +514,8 @@ def draw_nested_connections(ax, centers, nested_connections):
                     zorder=2
                 )
                 ax.add_patch(arrow)
+            elif start in HIDDEN_NODES or end in HIDDEN_NODES:
+                continue
             else:
                 print(f"Warning: Connection {start}->{end} skipped (invalid node)")
     return colors  # 返回颜色用于图例
@@ -542,6 +552,8 @@ def visualize_nested_connections(nested_connections, highlight_nodes=None, exit_
     for idx, row in df.iterrows():
         poly_points = []
         node_id = idx + 1
+        if node_id in HIDDEN_NODES:
+            continue
 
         # 颜色优先级：出口 > 高亮 > 默认
         if exit_nodes and node_id in exit_nodes:
@@ -665,6 +677,8 @@ def visualize_numbers(highlight_nodes=None, exit_nodes=None, people_count=None, 
     for idx, row in df.iterrows():
         poly_points = []
         node_id = idx + 1
+        if node_id in HIDDEN_NODES:
+            continue
 
         # 颜色优先级：出口 > 默认
         if exit_nodes and node_id in exit_nodes:
@@ -925,15 +939,15 @@ if __name__ == '__main__':
         iterations.append(i)
 
         #生成可视化图片
-        density_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+        density_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102],
                                                      g.current_num, i, path_connections, 'people'))
-    #     fire_levels_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #     fire_levels_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102],
     #                                                      g.fire_levels, i, g.groups_directions, 'fire_levels'))
-    #     congestion_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #     congestion_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102],
     #                                                     g.congestion_levels, i, g.groups_directions, 'congestion'))
-    #     static_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #     static_image_files.append(visualize_numbers(g.agent_cell_ids, [100, 101, 102],
     #                                                 g.static_field, i, g.groups_directions, 'static'))
-    #     # visualize_numbers(g.agent_cell_ids, [100, 101, 102, 103],
+    #     # visualize_numbers(g.agent_cell_ids, [100, 101, 102],
     #     #                                              location, i, g.groups_directions, 'location')
     # #
     # # 1. 静态场变化图
