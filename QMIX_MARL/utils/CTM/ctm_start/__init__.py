@@ -34,6 +34,7 @@ from utils.CTM.utils import calculate_fire_risk, load_all_firebytime
 BASE_DIR = Path(__file__).resolve().parents[3]
 DATA_DIR = BASE_DIR / 'data_preprocessing'
 OUTPUT_DIR = BASE_DIR / 'result' / 'ctm_visuals'
+VISUAL_OUTPUT_DIR = BASE_DIR / 'result' / 'visual'
 
 
 
@@ -152,20 +153,20 @@ def init(fire_info=None):
     people_number = random_people()
     cell_type = cell_type_create()
 
-    sigal_effect_cells = [#{1: [(68, 67), (1, 2), (2, 3), (3, 4),(67, 66), (66, 65)], 2: [(68, 1), (2, 1), (3, 2), (1, 100), (66, 67), (67, 2)], 4: [(3, 2), (2, 1), (1, 68), (68, 69),(66, 67), (67, 68)]},   # agent1
+    sigal_effect_cells = [{1: [(68, 67), (1, 2), (2, 3), (3, 4),(67, 66), (66, 65)], 2: [(68, 1), (2, 1), (3, 2), (1, 100), (66, 67), (67, 2)], 4: [(3, 2), (2, 1), (1, 68), (68, 69),(66, 67), (67, 68)]},   # agent1
                           {1: [(69, 70), (70, 71), (71, 117), (117, 116), (116, 115),(115, 114), (104, 105), (105, 106),(106, 107)], 2: [(115, 116), (116, 117), (117, 71), (71, 70),(70, 69), (69, 68),(106,105),(105,104),(104,117)]},   # agent2
-                          #{1: [(4, 5), (5, 6), (6, 7),(7, 8), (8, 9), (9, 10),(65, 64), (64, 63), (63, 62),(62, 61), (61, 60), (60, 59),], 3: [(9, 8), (8, 7), (7, 6),(6, 5), (5, 4), (4, 3),(60, 61), (61, 62), (62, 63),(63, 64), (64, 65), (65, 66)]},  # agent3
-                          #{2: [(109, 63)], 4: [(109, 108)]},  # agent4
+                          {1: [(4, 5), (5, 6), (6, 7),(7, 8), (8, 9), (9, 10),(65, 64), (64, 63), (63, 62),(62, 61), (61, 60), (60, 59),], 3: [(9, 8), (8, 7), (7, 6),(6, 5), (5, 4), (4, 3),(60, 61), (61, 62), (62, 63),(63, 64), (64, 65), (65, 66)]},  # agent3
+                          {2: [(109, 63)], 4: [(109, 108)]},  # agent4
                           {1: [(114, 113), (113, 112),(112, 118), (111, 112),(110, 111), (108, 113),(107, 114)], 2: [(112, 111), (111, 110),(110, 109), (113, 108),(108, 109), (114, 107),(107, 108)], 3: [(112, 113), (113, 114),(114, 115), (110, 111),(111, 108), (108, 107),(107, 106)]},  # agent5
                           {1: [(118, 119), (119, 121),(121, 122), (122, 127),(120, 119),(124, 125), (123, 126)], 3: [(124, 123), (123, 122),(122, 121), (121, 119),(120, 119),(119, 118), (118, 112)]},  # agent6
-                          #{1: [(10, 11), (11, 12),(12, 13), (13, 14),(14, 15), (15, 16),(16, 17), (17, 18),(59, 58), (58, 57),(57, 56), (56, 55),(55, 54), (54, 53),(53, 52), (52, 51)], 3: [(17, 16), (16, 15),(15, 14), (14, 13),(13, 12), (12, 11),(11, 10), (10, 9),(52, 53), (53, 54),(54, 55), (55, 56),(56, 57), (57, 58),(58, 59), (59, 60)]},  # agent7
+                          {1: [(10, 11), (11, 12),(12, 13), (13, 14),(14, 15), (15, 16),(16, 17), (17, 18),(59, 58), (58, 57),(57, 56), (56, 55),(55, 54), (54, 53),(53, 52), (52, 51)], 3: [(17, 16), (16, 15),(15, 14), (14, 13),(13, 12), (12, 11),(11, 10), (10, 9),(52, 53), (53, 54),(54, 55), (55, 56),(56, 57), (57, 58),(58, 59), (59, 60)]},  # agent7
                           {1: [(125, 130), (130, 131), (131, 136),(136, 135), (126, 129), (129, 132),(132, 135), (135, 137), (137, 140),(140, 141), (141, 146), (127, 128),(128, 133), (133, 134), (134, 138),(138, 139), (139, 142), (142, 145)], 3: [(141, 140), (140, 137), (137, 135),(135, 132), (132, 129), (129, 126),(126, 123), (125, 126), (130, 125),(131, 130), (136, 131), (142, 139),(139, 138), (138, 134), (134, 133),(133, 128), (128, 127), (127, 122)], 4: [(125, 126), (126, 127), (127, 128),(130, 129), (129, 132), (131, 132),(132, 135), (136, 135), (128, 133),(133, 134), (135, 134), (134, 97),(141, 140), (140, 137), (137, 138),(138, 96), (142, 139), (139, 138)] },  # agent8
-                         # {1: [(99, 90), (90, 89),(98, 91), (91, 88),(97, 92), (92, 87),(96, 93), (93, 86),(95, 94), (94, 85),(89, 88), (88, 87) , (87, 86),(86, 85), (85, 84),(84, 83), (83, 82),(82, 81)], 4: [(99, 90), (90, 89),(98, 91), (91, 88),(97, 92), (92, 87),(96, 93), (93, 86),(95, 94), (94, 85),(89, 88), (88, 87) , (87, 86),(86, 85), (85, 101),(84, 85), (83, 84),(82, 83)]},  # agent9
+                         {1: [(99, 90), (90, 89),(98, 91), (91, 88),(97, 92), (92, 87),(96, 93), (93, 86),(95, 94), (94, 85),(89, 88), (88, 87) , (87, 86),(86, 85), (85, 84),(84, 83), (83, 82),(82, 81)], 4: [(99, 90), (90, 89),(98, 91), (91, 88),(97, 92), (92, 87),(96, 93), (93, 86),(95, 94), (94, 85),(89, 88), (88, 87) , (87, 86),(86, 85), (85, 101),(84, 85), (83, 84),(82, 83)]},  # agent9
                           {1: [(147, 148), (148, 157), (157, 158),(146, 149), (149, 156), (156, 159),(145, 150), (150, 155), (155, 160), (143, 144), (144, 151), (151, 154),(154, 161),(152, 153), (153, 154), (163, 162),(162, 161),(161, 160),(160, 159), (158, 159), (159, 73)],2: [(147, 148), (148, 157), (158, 157),(143, 144),(144, 151), (145, 150), (146, 149),(149, 156), (150, 155), (151, 154),(152, 153), (153, 154), (154, 155),(155, 156),(156, 157), (159, 158), (163, 162),(162, 161),(161, 160),(160, 159), (157, 48)], 3: [(147, 146), (148, 149), (157, 156),(158, 159), (159, 156), (156, 149), (149, 146),(146, 141), (160, 155), (155, 150),(150, 145), (145, 142), (161, 154), (154, 151),(151, 144),(144, 143), (143, 142),(152, 153), (153, 154),(163, 162),(162, 161)]},  # agent10
-                          #{1: [(18, 19), (19, 20), (20, 39),(39, 40), (40, 41), (41, 42),(42, 37), (43, 38), (51, 50),(50, 49), (49, 48), (48, 47),(47, 46), (46, 45), (45, 42),(44, 43) ], 3: [ (43, 42), (42, 41), (41, 40),(40, 39), (39, 20), (20, 19),(19, 18), (18, 17), (44, 45),(45, 46), (46, 47), (47, 48),(48, 49), (49, 50), (50, 51),(51, 52) ], 4: [ (18, 19), (19, 20), (20, 39),(39, 40), (40, 41), (43, 42),(42, 41), (44, 45), (45, 46),(51, 50), (50, 49), (49, 48),(48, 47), (47, 46), (41, 46),(46, 72) ]},  # agent11
-                          #{2: [(23, 24), (24, 25), (25, 26), (26, 27), (22, 33), (33, 32),(32, 31), (31, 30), (21, 34),(34, 35), (35, 36), (36, 37),(37, 30), (30, 27), (27, 102),(38, 29), (29, 28), (28, 103)], 4: [(23, 22), (22, 21), (21, 20), (24, 33), (33, 34), (34, 39),(25, 32), (32, 35), (35, 40),(26, 31), (31, 36), (36, 41),(27, 30), (30, 37), (37, 42),(28, 29), (29, 38), (38, 43)]},  # agent12
-                          #{4: [(72, 73),(73, 74),(74, 75),(75, 76)], 2: [(75, 74),(74, 73),(73, 72),(72, 46)]},  # agent13
-                          #{2: [(76, 77), (77, 78), (78, 79),(79, 80), (80, 81), (81, 82)], 3: [(81, 80), (80, 79), (79, 78),(78, 77), (77, 76), (76, 75)]},  # agent14
+                          {1: [(18, 19), (19, 20), (20, 39),(39, 40), (40, 41), (41, 42),(42, 37), (43, 38), (51, 50),(50, 49), (49, 48), (48, 47),(47, 46), (46, 45), (45, 42),(44, 43) ], 3: [ (43, 42), (42, 41), (41, 40),(40, 39), (39, 20), (20, 19),(19, 18), (18, 17), (44, 45),(45, 46), (46, 47), (47, 48),(48, 49), (49, 50), (50, 51),(51, 52) ], 4: [ (18, 19), (19, 20), (20, 39),(39, 40), (40, 41), (43, 42),(42, 41), (44, 45), (45, 46),(51, 50), (50, 49), (49, 48),(48, 47), (47, 46), (41, 46),(46, 72) ]},  # agent11
+                          {2: [(23, 24), (24, 25), (25, 26), (26, 27), (22, 33), (33, 32),(32, 31), (31, 30), (21, 34),(34, 35), (35, 36), (36, 37),(37, 30), (30, 27), (27, 102),(38, 29), (29, 28), (28, 103)], 4: [(23, 22), (22, 21), (21, 20), (24, 33), (33, 34), (34, 39),(25, 32), (32, 35), (35, 40),(26, 31), (31, 36), (36, 41),(27, 30), (30, 37), (37, 42),(28, 29), (29, 38), (38, 43)]},  # agent12
+                          {4: [(72, 73),(73, 74),(74, 75),(75, 76)], 2: [(75, 74),(74, 73),(73, 72),(72, 46)]},  # agent13
+                          {2: [(76, 77), (77, 78), (78, 79),(79, 80), (80, 81), (81, 82)], 3: [(81, 80), (80, 79), (79, 78),(78, 77), (77, 76), (76, 75)]},  # agent14
                           {1: [(187, 188), (188, 193), (193, 194),(194, 199), (199, 200), (200, 201),(201, 202)], 4: [(187, 188), (188, 193), (193, 194), (201, 200), (200, 199), (199, 198),(194, 195)]},  # agent15
                           {1: [(185, 190), (190, 191), (191, 196),(196, 197), (197, 210), (210, 209),(209, 208)], 2: [(209, 210), (210, 197), (197, 198),(185, 190), (190, 191), (191, 196),(196, 195)]},  # agent16
                           {1: [(202, 203), (203, 204),(204, 223), (223, 222),(222, 221),(221, 220)], 3: [(221, 222), (222, 223),(223, 204), (204, 203), (203, 202),(202, 201)], 4: [(202, 203), (203, 204),(204, 205), (221, 222),(222, 223),(223, 204)]},  # agent17
@@ -196,7 +197,8 @@ def init(fire_info=None):
 
     # agent_cell_ids = [32, 43, 46, 50, 51, 57, 60, 62, 18, 13, 11, 10, 8, 5, 25, 17, 30, 66] #15,
 
-    agent_cell_ids = [71,113,119,134,156,194,196,204,206,224,225,226]#[1,71,6,109,113,119,14,134,85,156,39,31,73,78,194,196,204,206,224,225,226]
+    # agent_cell_ids = [71,113,119,134,156,194,196,204,206,224,225,226]
+    agent_cell_ids = [1,71,6,109,113,119,14,134,85,156,39,31,73,78,194,196,204,206,224,225,226]
     # energy_domine = [8,7,6,5,4,5,6,7,7,6,5,4,3,2,1,2,3,4,5,6,7,8,9,3,2,1,2,3,4,5,6,7,8,9,10,11,12,13,8,9,10,11
                      # ,12,13,14,15,16,16,15,14,13,14,15,16,17,12,11,10,9,8,7,6,5,5,4,3,2,1,0,0,0]
 
@@ -428,6 +430,20 @@ def init(fire_info=None):
     # Make shortest-path arrows effective in simulation flow, not only visualization.
     fixed_cell = list(dict.fromkeys(fixed_cell + shortest_path_arrows[0]))
 
+    # Enforce one-controller-per-cell for signal effects:
+    # each source cell follows its nearest agent only.
+    original_control_source_cells = _collect_signal_source_cells(sigal_effect_cells)
+    nearest_agent_owner = assign_cells_to_nearest_agent(
+        agent_cell_ids,
+        candidate_nodes=original_control_source_cells,
+        restrict_same_layer=True,
+    )
+    sigal_effect_cells = build_nearest_agent_signal_effect_cells(
+        agent_cell_ids,
+        sigal_effect_cells,
+        node_owner=nearest_agent_owner,
+    )
+
 
     Position_cells =[]
 
@@ -456,6 +472,12 @@ def init(fire_info=None):
     cell_type
     )
     graph.shortest_path_arrows = shortest_path_arrows
+    graph.original_control_source_cells = sorted(original_control_source_cells)
+    graph.nearest_agent_owner = nearest_agent_owner
+    graph.nearest_agent_control_cells = build_agent_control_cells(
+        agent_cell_ids,
+        node_owner=nearest_agent_owner
+    )
     return graph
 
 
@@ -519,6 +541,275 @@ def draw_nested_connections(ax, centers, nested_connections):
             else:
                 print(f"Warning: Connection {start}->{end} skipped (invalid node)")
     return colors  # 返回颜色用于图例
+
+
+def _load_cell_centers(csv_path=None):
+    """Load polygon centers keyed by node id (1-based)."""
+    csv_path = csv_path or (DATA_DIR / 'outputP.csv')
+
+    def parse_coordinate(cell):
+        matches = re.findall(r"[-+]?\d*\.?\d+", str(cell))
+        return float(matches[0]), float(matches[1])
+
+    df = pd.read_csv(csv_path, header=None, encoding="utf-8")
+    centers = {}
+    for idx, row in df.iterrows():
+        node_id = idx + 1
+        pts = []
+        for col in range(4):
+            x, y = parse_coordinate(row[col])
+            pts.append([x, y])
+        centers[node_id] = np.mean(pts, axis=0)
+    return centers
+
+
+def _collect_signal_source_cells(sigal_effect_cells):
+    """Collect original source cells that are signal-controlled."""
+    source_cells = set()
+    for action_dict in sigal_effect_cells:
+        for edges in action_dict.values():
+            for start, _ in edges:
+                if start not in HIDDEN_NODES:
+                    source_cells.add(start)
+    return source_cells
+
+
+def _node_layer(node_id, layer_sets):
+    if node_id in layer_sets["layer1"]:
+        return "layer1"
+    if node_id in layer_sets["layer2"]:
+        return "layer2"
+    if node_id in layer_sets["layer3"]:
+        return "layer3"
+    if node_id in layer_sets["layer4"]:
+        return "layer4"
+    return None
+
+
+def assign_cells_to_nearest_agent(agent_cell_ids, candidate_nodes=None, restrict_same_layer=True):
+    """Assign each candidate cell to the nearest agent cell by Euclidean distance."""
+    centers = _load_cell_centers()
+    available_agents = [aid for aid in agent_cell_ids if aid in centers and aid not in HIDDEN_NODES]
+    if not available_agents:
+        return {}
+
+    if candidate_nodes is None:
+        candidate_nodes = [node for node in centers.keys() if node not in HIDDEN_NODES]
+    else:
+        candidate_nodes = list(candidate_nodes)
+
+    layer_sets = _build_layer_sets(max(centers.keys()))
+    agent_layers = {aid: _node_layer(aid, layer_sets) for aid in available_agents}
+
+    owner = {}
+    for node in candidate_nodes:
+        if node in HIDDEN_NODES or node not in centers:
+            continue
+
+        candidate_agents = available_agents
+        if restrict_same_layer:
+            node_layer = _node_layer(node, layer_sets)
+            candidate_agents = [aid for aid in available_agents if agent_layers.get(aid) == node_layer]
+            if not candidate_agents:
+                continue
+
+        node_xy = centers[node]
+        best_rank = (float('inf'), float('inf'))
+        best_agent = None
+        for agent_id in candidate_agents:
+            dist = float(np.linalg.norm(node_xy - centers[agent_id]))
+            rank = (dist, agent_id)
+            if rank < best_rank:
+                best_rank = rank
+                best_agent = agent_id
+        owner[node] = best_agent
+    return owner
+
+
+def build_nearest_agent_signal_effect_cells(agent_cell_ids, sigal_effect_cells, node_owner=None):
+    """
+    Keep only edges whose source cell belongs to the same (nearest) agent.
+    This enforces one-controller-per-cell for signal-controlled outgoing directions.
+    """
+    if len(agent_cell_ids) != len(sigal_effect_cells):
+        raise ValueError("agent_cell_ids and sigal_effect_cells must have identical lengths")
+    if node_owner is None:
+        node_owner = assign_cells_to_nearest_agent(agent_cell_ids)
+
+    filtered_all = []
+    for idx, agent_id in enumerate(agent_cell_ids):
+        action_dict = {}
+        for action_key, edges in sigal_effect_cells[idx].items():
+            filtered_edges = []
+            for start, end in edges:
+                if start in HIDDEN_NODES or end in HIDDEN_NODES:
+                    continue
+                if node_owner.get(start) == agent_id:
+                    filtered_edges.append((start, end))
+            action_dict[action_key] = filtered_edges
+        filtered_all.append(action_dict)
+    return filtered_all
+
+
+def build_agent_control_cells(agent_cell_ids, sigal_effect_cells=None, node_owner=None):
+    """Collect controlled cells for each agent."""
+    if node_owner is not None:
+        control_cells = {agent_id: set() for agent_id in agent_cell_ids}
+        for node_id, owner_id in node_owner.items():
+            if owner_id in control_cells and node_id not in HIDDEN_NODES:
+                control_cells[owner_id].add(node_id)
+        return control_cells
+
+    if sigal_effect_cells is None:
+        raise ValueError("sigal_effect_cells is required when node_owner is None")
+    if len(agent_cell_ids) != len(sigal_effect_cells):
+        raise ValueError("agent_cell_ids and sigal_effect_cells must have identical lengths")
+
+    control_cells = {}
+    for idx, agent_id in enumerate(agent_cell_ids):
+        nodes = set()
+        for edges in sigal_effect_cells[idx].values():
+            for start, end in edges:
+                if start not in HIDDEN_NODES:
+                    nodes.add(start)
+                if end not in HIDDEN_NODES:
+                    nodes.add(end)
+        control_cells[agent_id] = nodes
+    return control_cells
+
+
+def visualize_agent_control_ranges(agent_cell_ids, sigal_effect_cells=None, exit_nodes=None, output_path=None,
+                                   node_owner=None, show_title=False):
+    """Visualize agent control ranges with different colors and save to file."""
+    csv_path = DATA_DIR / 'outputP.csv'
+
+    def parse_coordinate(cell):
+        matches = re.findall(r"[-+]?\d*\.?\d+", str(cell))
+        return float(matches[0]), float(matches[1])
+
+    df = pd.read_csv(csv_path, header=None, encoding="utf-8")
+
+    first_poly = [parse_coordinate(df.iloc[0, col]) for col in range(4)]
+    dx, dy = -min(p[0] for p in first_poly), -max(p[1] for p in first_poly)
+
+    control_cells = build_agent_control_cells(agent_cell_ids, sigal_effect_cells=sigal_effect_cells, node_owner=node_owner)
+    node_to_agents = {}
+    for agent_id, nodes in control_cells.items():
+        for node in nodes:
+            node_to_agents.setdefault(node, []).append(agent_id)
+
+    color_values = plt.cm.tab20(np.linspace(0, 1, max(len(agent_cell_ids), 1)))
+    agent_colors = {agent_id: color_values[i] for i, agent_id in enumerate(agent_cell_ids)}
+
+    fig, ax = plt.subplots(figsize=(16, 12))
+    ax.set_aspect("equal")
+    ax.grid(False)
+
+    centers = {}
+    all_points = []
+    overlap_exists = False
+
+    for idx, row in df.iterrows():
+        node_id = idx + 1
+        if node_id in HIDDEN_NODES:
+            continue
+
+        poly_points = []
+        for col in range(4):
+            x, y = parse_coordinate(row[col])
+            x, y = x + dx, y + dy
+            poly_points.append([x, y])
+            all_points.append([x, y])
+
+        owners = node_to_agents.get(node_id, [])
+        if exit_nodes and node_id in exit_nodes:
+            use_color = "#2ecc71"
+            alpha = 0.85
+        elif len(owners) == 1:
+            use_color = agent_colors[owners[0]]
+            alpha = 0.72
+        elif len(owners) > 1:
+            use_color = "#95a5a6"
+            alpha = 0.9
+            overlap_exists = True
+        else:
+            use_color = "#ecf0f1"
+            alpha = 0.45
+
+        poly = Polygon(
+            poly_points,
+            closed=True,
+            edgecolor="#2c3e50",
+            facecolor=use_color,
+            linewidth=0.8,
+            alpha=alpha
+        )
+        ax.add_patch(poly)
+
+        center = np.mean(poly_points, axis=0)
+        centers[node_id] = center
+        node_label = f"{node_id}*" if len(owners) > 1 else str(node_id)
+        ax.text(*center, node_label, fontsize=6, color='black', ha='center', va='center')
+
+    for agent_id in agent_cell_ids:
+        if agent_id in centers:
+            center = centers[agent_id]
+            ax.scatter(
+                center[0],
+                center[1],
+                s=72,
+                c=[agent_colors[agent_id]],
+                edgecolors="black",
+                linewidths=1.0,
+                zorder=5
+            )
+
+    all_points = np.array(all_points)
+    padding = 0.005
+    ax.set_xlim(all_points[:, 0].min() - padding, all_points[:, 0].max() + padding)
+    ax.set_ylim(all_points[:, 1].min() - padding, all_points[:, 1].max() + padding)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_frame_on(False)
+    if show_title:
+        ax.set_title("Agent Control Ranges (* means overlap cell)", fontsize=14)
+
+    legend_handles = [
+        plt.Line2D(
+            [0], [0], marker='s', color='w',
+            markerfacecolor=agent_colors[agent_id],
+            markeredgecolor='black',
+            markersize=9, linestyle='None',
+            label=f'Agent {agent_id}'
+        )
+        for agent_id in agent_cell_ids
+    ]
+    legend_handles.append(
+        plt.Line2D([0], [0], marker='s', color='w', markerfacecolor="#ecf0f1",
+                   markeredgecolor='black', markersize=9, linestyle='None', label='No Agent Control')
+    )
+    if overlap_exists and node_owner is None:
+        legend_handles.append(
+            plt.Line2D([0], [0], marker='s', color='w', markerfacecolor="#95a5a6",
+                       markeredgecolor='black', markersize=9, linestyle='None', label='Overlap Control')
+        )
+    if exit_nodes:
+        legend_handles.append(
+            plt.Line2D([0], [0], marker='s', color='w', markerfacecolor="#2ecc71",
+                       markeredgecolor='black', markersize=9, linestyle='None', label='Exit')
+        )
+    ax.legend(handles=legend_handles, loc='upper left', fontsize='x-small', ncol=2)
+
+    if output_path is None:
+        output_path = VISUAL_OUTPUT_DIR / 'agent_control_ranges.png'
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    plt.savefig(output_path, dpi=220, bbox_inches="tight")
+    plt.close()
+    return str(output_path)
+
 
 def visualize_nested_connections(nested_connections, highlight_nodes=None, exit_nodes=None):
     # ============= 默认文件路径 =============
@@ -832,6 +1123,7 @@ if __name__ == '__main__':
     # Run from repo root or QMIX_MARL; outputs saved under QMIX_MARL/result/ctm_visuals
     # Static actions are fixed to 0 for every signal.
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    VISUAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     fire_info = load_all_firebytime()
     # action_space = [
     #     [1, 2, 2, 3, 0, 3, 1, 3, 1, 0, 0, 0],
@@ -900,6 +1192,14 @@ if __name__ == '__main__':
     #     [1, 1, 0, 3, 1, 3, 1, 3, 1, 0, 1, 0]
     # ]
     g = init(fire_info)
+    agent_control_path = visualize_agent_control_ranges(
+        g.agent_cell_ids,
+        node_owner=getattr(g, "nearest_agent_owner", None),
+        exit_nodes=[100, 101, 102],
+        output_path=VISUAL_OUTPUT_DIR / "agent_control_ranges.png",
+        show_title=False
+    )
+    print(f"Saved agent control ranges: {agent_control_path}")
     path_connections = getattr(g, "shortest_path_arrows", g.groups_directions)
     static_actions = [0] * len(g.sigal_effect_cells)
     action_space = [static_actions]
