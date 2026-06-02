@@ -1,7 +1,71 @@
-# CTM visualization outputs
-# QMIX_MARL/result/ctm_visuals/
-
 # Python caches
+__pycache__/
 **/__pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 *.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / OS local files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+.cache/
+.ipynb_checkpoints/
+
+# QMIX / MARL generated experiment outputs
+QMIX_MARL/result/
+QMIX_MARL/**/result/
+**/historydata/
+**/train_process/
+**/actions_result/
+**/loss.txt
+**/evaluate_reward.txt
+**/episode_rewards_*.csv
+**/win_rates_*.csv
+**/plt_*.png
+**/loss.png
+
+# CTM visualization outputs
+QMIX_MARL/result/ctm_visuals/
+**/ctm_visuals/
+**/congestion number*.png
+**/fire_levels number*.png
+**/*_evolution.gif
+**/*_levels_plot.png
+**/cumulative_*_levels_plot.png
+
+# Model checkpoints / learned weights
+QMIX_MARL/MARL/model/
+QMIX_MARL/model/
+**/model/
+*.pt
+*.pth
+*.ckpt
+
+# Local CTM debug exports
+output_cell*.csv
+output_cell_count.csv
+
+# Local run metadata
+training_parameters.local.json
+*.local.json
